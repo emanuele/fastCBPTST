@@ -134,12 +134,16 @@ def compute_statistic_threshold(statistic_permutation, p_value_threshold):
 def cluster_based_permutation_test(unit_statistic,
                                    unit_statistic_permutation,
                                    proximity_matrix,
-                                   p_value_threshold=0.05,
+                                   p_value_threshold_unit=0.05,
+                                   p_value_threshold_cluster=None,
                                    verbose=True):
     """This is the cluster-based permutation test of CBPT, where the
     permutations of the given statistic at each unit are re-used in
     order to compute the max_cluster_statistic.
     """
+    if p_value_threshold_cluster is None:
+        p_value_threshold_cluster = p_value_threshold_unit
+
     print("Computing actual p-values at each unit on the original (unpermuted) data")
     p_value = compute_pvalues_from_permutations(unit_statistic, unit_statistic_permutation)
     print("Computing the p-value of each permutation of each unit.")
@@ -148,8 +152,8 @@ def cluster_based_permutation_test(unit_statistic,
     
     # Compute clusters and max_cluster_statistic on permuted data
 
-    unit_significant = p_value <= p_value_threshold
-    unit_significant_permutation = p_value_permutation <= p_value_threshold
+    unit_significant = p_value <= p_value_threshold_unit
+    unit_significant_permutation = p_value_permutation <= p_value_threshold_unit
     iterations = unit_statistic_permutation.shape[1]
 
     print("For each permutation compute the max cluster statistic.")
@@ -171,8 +175,8 @@ def cluster_based_permutation_test(unit_statistic,
             max_cluster_statistic[i] = cluster_statistic_permutation.max()
 
     print("Computing the null-distribution of the max cluster statistic.")
-    max_cluster_statistic_threshold = compute_statistic_threshold(max_cluster_statistic, p_value_threshold)
-    print("Max cluster statistic threshold (p-value=%s) = %s" % (p_value_threshold, max_cluster_statistic_threshold))
+    max_cluster_statistic_threshold = compute_statistic_threshold(max_cluster_statistic, p_value_threshold_cluster)
+    print("Max cluster statistic threshold (p-value=%s) = %s" % (p_value_threshold_cluster, max_cluster_statistic_threshold))
 
     # Compute clusters and max_cluster_statistic on the original
     # (unpermuted) data
@@ -189,7 +193,7 @@ def cluster_based_permutation_test(unit_statistic,
         print("Cluster statistic: %s" % cluster_statistic)
         p_value_cluster = compute_pvalues_from_permutations(cluster_statistic, max_cluster_statistic)
         print "p_value_cluster:", p_value_cluster
-        cluster_significant = cluster[p_value_cluster <= p_value_threshold]
+        cluster_significant = cluster[p_value_cluster <= p_value_threshold_cluster]
         print("%d significant clusters left" % len(cluster_significant))
     else:
         print("No clusters in unpermuted data!")
@@ -202,4 +206,4 @@ def cluster_based_permutation_test(unit_statistic,
     for cs in cluster_significant:
         unit_statistic_significant[cs] = unit_statistic[cs]
 
-    return cluster, cluster_statistic, p_value_cluster, p_value_threshold, max_cluster_statistic
+    return cluster, cluster_statistic, p_value_cluster, max_cluster_statistic
