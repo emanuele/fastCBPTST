@@ -40,11 +40,6 @@ giving a huge speed-up, as explained in Olivetti et al. (2014).
 The code handles well a large number of sensors supporting sparse
 proximity_matrix/connectivity_matrix.
 
-There is also a function compute_homogeneous_statistics() to help in
-case the range of values of the test statistic substantially differs
-from unit/sensor to unit/sensor and needs to be made
-homogeneous/normalized.
-
 
 Copyright Emanuele Olivetti, 2014-2019
 
@@ -74,8 +69,6 @@ def compute_clusters_statistic(unit_statistic, proximity_matrix,
 
     # Compute connected components and transform in list of lists:
     clusters = [list(cluster) for cluster in connected_components(graph)]
-    if verbose:
-        print("Nr. of clusters: %s. Clusters sizes: %s" % (len(clusters), np.array([len(cl) for cl in clusters])))
 
     # Compute the cluster statistic:
     cluster_statistic = np.zeros(len(clusters))
@@ -96,6 +89,8 @@ def compute_clusters_statistic(unit_statistic, proximity_matrix,
         clusters = clusters.astype(np.int)
 
     cluster_statistic = cluster_statistic[idx]
+    if verbose:
+        print("Nr. of clusters: %s. Clusters sizes: %s. Max statistic: %s" % (len(clusters), np.array([len(cl) for cl in clusters]), cluster_statistic.max()))
     return clusters, cluster_statistic
 
 
@@ -136,56 +131,20 @@ def compute_statistic_threshold(statistic_permutation, p_value_threshold):
     return statistic_threshold.squeeze()
 
 
-def compute_homogeneous_statistics(unit_statistic,
-                                   unit_statistic_permutation,
-                                   p_value_threshold,
-                                   homogeneous_statistic='unit_statistic',
-                                   verbose=True):
-    """Compute p_values from permutations and create homogeneous statistics.
-    """
-    # Compute p-values for each unit    
-    print("Homogeneous statistic: %s" % homogeneous_statistic)
-    print("Computing statistic thresholds for each unit with p-value=%f" % p_value_threshold)
-    statistics_threshold = compute_statistic_threshold(unit_statistic_permutation, p_value_threshold)
-    print("Computing actual p-values at each unit on the original (unpermuted) data")
-    p_value = compute_pvalues_from_permutations(unit_statistic, unit_statistic_permutation)
-    print("Computing the p-value of each permutation of each unit.")
-    p_value_permutation = compute_pvalues_of_permutations(unit_statistic_permutation)
-
-    # Here we try to massage the unit statistic so that it becomes
-    # homogeneous across different units, to compute the cluster
-    # statistic later on
-    if homogeneous_statistic == '1-p_value': # Here we use (1-p_value) instead of the statistic statistic : this is perfectly homogeneous across units because the p_value is uniformly distributed, by definition
-        unit_statistic_permutation_homogeneous = 1.0 - p_value_permutation
-        unit_statistic_homogeneous = 1.0 - p_value
-    elif homogeneous_statistic == 'normalized statistic': # Here we use a z-score of statistic, which is good if its distribution normal or approximately normal
-        statistics_mean = unit_statistic_permutation.mean(1)
-        statistics_std = unit_statistic_permutation.std(1)
-        unit_statistic_permutation_homogeneous = np.nan_to_num((unit_statistic_permutation - statistics_mean[:,None]) / statistics_std[:,None])
-        unit_statistic_homogeneous = np.nan_to_num((unit_statistic - statistics_mean) / statistics_std)
-    elif homogeneous_statistic == 'unit_statistic': # Here we use the unit statistic assuming that it is homogeneous across units (this is not much true)
-        unit_statistic_permutation_homogeneous = unit_statistic_permutation
-        unit_statistic_homogeneous = unit_statistic
-    elif homogeneous_statistic == 'p_value': # Here we use p_value instead of the statistic statistic : this is perfectly homogeneous across units because the p_value is uniformly distributed, by definition
-        unit_statistic_permutation_homogeneous = p_value_permutation
-        unit_statistic_homogeneous = p_value
-    else:
-        raise Exception
-
-    return p_value, p_value_permutation, unit_statistic_homogeneous, unit_statistic_permutation_homogeneous
-
-
 def cluster_based_permutation_test(unit_statistic,
                                    unit_statistic_permutation,
                                    proximity_matrix,
                                    p_value_threshold=0.05,
-                                   homogeneous_statistic='unit_statistic',
                                    verbose=True):
     """This is the cluster-based permutation test of CBPT, where the
     permutations of the given statistic at each unit are re-used in
     order to compute the max_cluster_statistic.
     """
-    p_value, p_value_permutation, unit_statistic_homogeneous, unit_statistic_permutation_homogeneous = compute_homogeneous_statistics(unit_statistic, unit_statistic_permutation, p_value_threshold, homogeneous_statistic=homogeneous_statistic, verbose=verbose)
+    print("Computing actual p-values at each unit on the original (unpermuted) data")
+    p_value = compute_pvalues_from_permutations(unit_statistic, unit_statistic_permutation)
+    print("Computing the p-value of each permutation of each unit.")
+    p_value_permutation = compute_pvalues_of_permutations(unit_statistic_permutation)
+
     
     # Compute clusters and max_cluster_statistic on permuted data
 
@@ -206,7 +165,7 @@ def cluster_based_permutation_test(unit_statistic,
             pm_permutation = proximity_matrix[idx][:,idx]
             print("%d" % i),
             stdout.flush()
-            cluster_permutation, cluster_statistic_permutation = compute_clusters_statistic(unit_statistic_permutation_homogeneous[idx,i], pm_permutation, verbose=verbose)
+            cluster_permutation, cluster_statistic_permutation = compute_clusters_statistic(unit_statistic_permutation[idx,i], pm_permutation, verbose=verbose)
             # Mapping back clusters to original ids:
             cluster_permutation = np.array([idx[cp] for cp in cluster_permutation])
             max_cluster_statistic[i] = cluster_statistic_permutation.max()
@@ -224,7 +183,7 @@ def cluster_based_permutation_test(unit_statistic,
     cluster_significant = []
     if len(idx) > 0:
         pm = proximity_matrix[idx][:,idx]
-        cluster, cluster_statistic = compute_clusters_statistic(unit_statistic_homogeneous[idx], pm, verbose=True)
+        cluster, cluster_statistic = compute_clusters_statistic(unit_statistic[idx], pm, verbose=True)
         # Mapping back clusters to original ids:
         cluster = np.array([idx[c] for c in cluster])
         print("Cluster statistic: %s" % cluster_statistic)
@@ -238,11 +197,9 @@ def cluster_based_permutation_test(unit_statistic,
         cluster_statistic = np.array([])
         p_value_cluster = np.array([])
 
-    print("Zeroing all unit statistic (homogeneous too) related non-significant clusters.")
+    print("Zeroing all unit statistic related non-significant clusters.")
     unit_statistic_significant = np.zeros(unit_statistic.size)
-    unit_statistic_homogeneous_significant = np.zeros(unit_statistic.size)
     for cs in cluster_significant:
         unit_statistic_significant[cs] = unit_statistic[cs]
-        unit_statistic_homogeneous_significant[cs] = unit_statistic_homogeneous[cs]
 
-    return cluster, cluster_statistic, p_value_cluster, p_value_threshold, max_cluster_statistic, unit_statistic_homogeneous
+    return cluster, cluster_statistic, p_value_cluster, p_value_threshold, max_cluster_statistic
