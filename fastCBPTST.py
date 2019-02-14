@@ -141,6 +141,9 @@ def cluster_based_permutation_test(unit_statistic,
     permutations of the given statistic at each unit are re-used in
     order to compute the max_cluster_statistic.
     """
+    if issparse(proximity_matrix):
+        proximity_matrix = proximity_matrix.tocsc()  # needed for the slicing below
+
     if p_value_threshold_cluster is None:
         p_value_threshold_cluster = p_value_threshold_unit
 
