@@ -45,6 +45,8 @@ Copyright Emanuele Olivetti, 2014-2019
 
 """
 
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.sparse import issparse
 from networkx import (from_scipy_sparse_matrix, from_numpy_matrix,
@@ -197,7 +199,7 @@ def cluster_based_permutation_test(unit_statistic,
         cluster = np.array([idx[c] for c in cluster])
         print("Cluster statistic: %s" % cluster_statistic)
         p_value_cluster = compute_pvalues_from_permutations(cluster_statistic, max_cluster_statistic)
-        print "p_value_cluster:", p_value_cluster
+        print("p_value_cluster: %s" % p_value_cluster)
         cluster_significant = cluster[p_value_cluster <= p_value_threshold_cluster]
         print("%d significant clusters left" % len(cluster_significant))
     else:
