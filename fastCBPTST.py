@@ -178,7 +178,7 @@ def cluster_based_permutation_test(unit_statistic,
 
             cluster_permutation, cluster_statistic_permutation = compute_clusters_statistic(unit_statistic_permutation[idx,i], pm_permutation, verbose=verbose)
             # Mapping back clusters to original ids:
-            cluster_permutation = np.array([idx[cp] for cp in cluster_permutation])
+            cluster_permutation = np.array([idx[cp] for cp in cluster_permutation], dtype=object)
             max_cluster_statistic[i] = cluster_statistic_permutation.max()
 
     print("Computing the null-distribution of the max cluster statistic.")
@@ -196,7 +196,7 @@ def cluster_based_permutation_test(unit_statistic,
         pm = proximity_matrix[idx][:,idx]
         cluster, cluster_statistic = compute_clusters_statistic(unit_statistic[idx], pm, verbose=True)
         # Mapping back clusters to original ids:
-        cluster = np.array([idx[c] for c in cluster])
+        cluster = np.array([idx[c] for c in cluster], dtype=object)
         print("Cluster statistic: %s" % cluster_statistic)
         p_value_cluster = compute_pvalues_from_permutations(cluster_statistic, max_cluster_statistic)
         print("p_value_cluster: %s" % p_value_cluster)
