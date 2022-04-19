@@ -173,8 +173,7 @@ def cluster_based_permutation_test(unit_statistic,
             # http://stackoverflow.com/questions/6408385/index-a-scipy-sparse-matrix-with-an-array-of-booleans
             pm_permutation = proximity_matrix[idx][:,idx]
             if verbose:
-                print("%d" % i),
-                stdout.flush()
+                print("%d) " % i, end="", flush=True)
 
             cluster_permutation, cluster_statistic_permutation = compute_clusters_statistic(unit_statistic_permutation[idx,i], pm_permutation, verbose=verbose)
             # Mapping back clusters to original ids:
