@@ -213,4 +213,4 @@ def cluster_based_permutation_test(unit_statistic,
     for cs in cluster_significant:
         unit_statistic_significant[cs.astype(int)] = unit_statistic[cs.astype(int)]  # casting to int is necessary because otherwise cs is object (see above) which is not acceptable as indices
 
-    return cluster, cluster_statistic, p_value_cluster, max_cluster_statistic
+    return cluster, cluster_statistic, p_value_cluster, max_cluster_statistic, max_cluster_statistic_threshold
