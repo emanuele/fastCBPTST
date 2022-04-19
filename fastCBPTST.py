@@ -41,7 +41,7 @@ The code handles well a large number of sensors supporting sparse
 proximity_matrix/connectivity_matrix.
 
 
-Copyright Emanuele Olivetti, 2014-2019
+Copyright Emanuele Olivetti, 2014-2022
 
 """
 
@@ -211,6 +211,6 @@ def cluster_based_permutation_test(unit_statistic,
     print("Zeroing all unit statistic related non-significant clusters.")
     unit_statistic_significant = np.zeros(unit_statistic.size)
     for cs in cluster_significant:
-        unit_statistic_significant[cs] = unit_statistic[cs]
+        unit_statistic_significant[cs.astype(int)] = unit_statistic[cs.astype(int)]  # casting to int is necessary because otherwise cs is object (see above) which is not acceptable as indices
 
     return cluster, cluster_statistic, p_value_cluster, max_cluster_statistic
