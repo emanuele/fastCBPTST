@@ -46,10 +46,10 @@ if __name__ == '__main__':
     snr2[active_sensors] = 0.0
     X1 = generate_data(n1, snr1)
     X2 = generate_data(n2, snr2)
-    n_permutations = 10000
+    n_permutations = 1000
     p_value_threshold_unit = 0.05
-    p_value_threshold_cluster = 0.001
-    verbose = False
+    p_value_threshold_cluster = 0.01
+    verbose = True
 
     print(f"p_value_threshold_unit: {p_value_threshold_unit}")
     print(f"p_value_threshold_cluster: {p_value_threshold_cluster}")
